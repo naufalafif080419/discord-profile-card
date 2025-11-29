@@ -1,12 +1,8 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "out",
-  "framework": "nextjs",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
-  ]
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": true
 }
 
