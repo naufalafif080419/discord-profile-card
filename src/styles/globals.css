@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&family=Chicle&family=Museo+Moderno:wght@400;500;600;700&family=Neo+Castel&family=Pixelify+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-[#09090B] text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  .scrollbar-linear {
+    scrollbar-width: thin;
+    scrollbar-color: #27272a transparent;
+  }
+
+  .scrollbar-linear::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-linear::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-linear::-webkit-scrollbar-thumb {
+    background-color: #27272a;
+    border-radius: 20px;
+  }
+
+  .scrollbar-linear::-webkit-scrollbar-thumb:hover {
+    background-color: #3f3f46;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+@layer utilities {
+  .entry-fade-overlay {
+    @apply fixed inset-0 z-[9000] flex items-center justify-center pointer-events-none;
+    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 55%), #050509;
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .entry-fade-overlay--fade {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+
+  .entry-fade-overlay__content {
+    @apply flex flex-col items-center gap-2 text-center;
+  }
+
+  .entry-fade-overlay__text {
+    @apply text-[11px] tracking-[0.25em] uppercase text-white/70;
+  }
+
+  .entry-fade-pulse {
+    @apply flex gap-1.5;
+  }
+
+  .entry-fade-pulse span {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.95), rgba(56, 189, 248, 0.95));
+    animation: entryPulse 1s ease-in-out infinite;
+  }
+
+  .entry-fade-pulse span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .entry-fade-pulse span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes entryPulse {
+    0% {
+      transform: translateY(0);
+      opacity: 0.8;
+    }
+    50% {
+      transform: translateY(-6px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 0.8;
+    }
+  }
+}
+
+/* Preserve ProfileCard internal Discord styles - these are imported separately */
+@import url('./styles.css');
