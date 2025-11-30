@@ -70,10 +70,10 @@ export function ActivityCard({ activity, hideTimestamp = false, rawgApiKey }: Ac
     return () => clearInterval(interval);
   }, [activity.timestamps?.start, hideTimestamp]);
 
-  // Use RAWG image if available, otherwise fall back to Discord CDN
-  // RAWG API is ONLY used for image replacement, not for title or metadata
+  // Use Discord image if available, otherwise fall back to RAWG image
+  // RAWG API is ONLY used as a fallback when Discord doesn't provide an image
   const discordLargeUrl = resolveAssetImage(activity.application_id, activity.assets?.large_image);
-  const largeUrl = rawgImageUrl || discordLargeUrl || placeholder(120, 120);
+  const largeUrl = discordLargeUrl || rawgImageUrl || placeholder(120, 120);
   
   const smallUrl = resolveAssetImage(activity.application_id, activity.assets?.small_image) || 
     (String(activity.name).toLowerCase().includes('code') ? ICON_VSCODE : '');
