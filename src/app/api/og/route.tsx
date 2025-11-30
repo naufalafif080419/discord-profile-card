@@ -67,9 +67,10 @@ export async function GET(request: NextRequest) {
               height: '200px',
               background: bannerUrl ? 'transparent' : 'linear-gradient(135deg, #5865F2 0%, #7289DA 100%)',
               position: 'relative',
+              display: 'flex',
             }}
           >
-            {bannerUrl && (
+            {bannerUrl ? (
               <img
                 src={bannerUrl}
                 width={1200}
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
                   height: '200px',
                 }}
               />
-            )}
+            ) : null}
             <div
               style={{
                 position: 'absolute',
@@ -194,9 +195,11 @@ export async function GET(request: NextRequest) {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          fontSize: '14px',
+                          color: '#fff',
                         }}
                       >
-                        <span style={{ fontSize: '16px' }}>✓</span>
+                        B
                       </div>
                     ))}
                   </div>
@@ -214,12 +217,9 @@ export async function GET(request: NextRequest) {
                 }}
               >
                 <span>@{username}</span>
-                {pronouns && (
-                  <>
-                    <span>•</span>
-                    <span>{pronouns}</span>
-                  </>
-                )}
+                {pronouns ? (
+                  <span>• {pronouns}</span>
+                ) : null}
               </div>
 
               {/* Bio */}
