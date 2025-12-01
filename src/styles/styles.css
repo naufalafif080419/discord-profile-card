@@ -228,11 +228,6 @@ background-position: center;
 background-repeat: no-repeat;
 }
 
-/* Hide any text content in the banner (except status badge) */
-.profile-banner > *:not(.status-badge):not(.banner-overlay) {
-display: none !important;
-}
-
 .banner-overlay {
 position: absolute;
 inset: 0;
@@ -1180,9 +1175,14 @@ will-change: max-height, opacity, transform, filter;
 .discord-music-section.has-content {
 max-height: 2000px;
 opacity: 1;
-margin: 14px 18px 16px;
+margin: 14px 18px 0px;
 transform: translateY(0) scale(1);
 filter: blur(0px);
+}
+
+.discord-activities-section.has-content:last-child,
+.discord-music-section.has-content:last-child {
+margin-bottom: 16px;
 }
 
 .discord-music-section.has-content {
@@ -1406,13 +1406,13 @@ transform: none !important;
 /* Shared card behavior */
 .discord-activity-card,
 .discord-music-card {
-background: rgba(99,99,102,.38);
+background: rgba(99,99,102,.25);
 backdrop-filter: blur(20px) saturate(180%);
 -webkit-backdrop-filter: blur(20px) saturate(180%);
-border: 1px solid rgba(255,255,255,.18);
-border-radius: 16px;
+border: 1px solid rgba(255,255,255,.12);
+border-radius: 14px;
 position: relative;
-box-shadow: 0 10px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.12);
+box-shadow: 0 4px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.08);
 height: var(--activity-card-height);
 overflow: hidden;
 display: flex;
@@ -1420,6 +1420,12 @@ flex-direction: column;
 --scale: clamp(0.60, calc(var(--activity-card-height) / 148px), 1.40);
 --min-footer: calc(32px * var(--scale));
 --pill-scale: clamp(0.75, calc(var(--scale) * var(--pill-scale-multiplier)), 1.20);
+margin-bottom: 12px;
+}
+
+.discord-activity-card:last-child,
+.discord-music-card:last-child {
+margin-bottom: 0;
 }
 
 .activity-card-header {
@@ -3310,4 +3316,30 @@ justify-content: center;
 align-items: center;
 gap: 12px;
 padding: 0;
+}
+
+/* Ensure complete transparency when transparent=true parameter is used */
+.outer_c0bea0[style*="transparent"],
+.outer_c0bea0.transparent-mode {
+background: transparent !important;
+border: none !important;
+box-shadow: none !important;
+}
+
+.discord-profile-card[style*="transparent"],
+.discord-profile-card.transparent-mode {
+background: transparent !important;
+backdrop-filter: none !important;
+-webkit-backdrop-filter: none !important;
+}
+
+/* Remove any white backgrounds from nested elements */
+.inner_c0bea0 {
+background: transparent !important;
+}
+
+/* Ensure embed body is transparent */
+body.embed-page,
+html.embed-page {
+background: transparent !important;
 }
