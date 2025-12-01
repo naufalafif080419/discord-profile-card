@@ -619,6 +619,28 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
   // Apply theme colors if default scheme
   useEffect(() => {
     const profileCard = document.querySelector('.discord-profile-card');
+    const outerContainer = document.querySelector('.outer_c0bea0');
+    
+    // If transparent is enabled, set background to transparent
+    if (params?.transparent) {
+      if (profileCard) {
+        profileCard.setAttribute('style', 'background: transparent !important; backdrop-filter: none; -webkit-backdrop-filter: none;');
+      }
+      if (outerContainer && outerContainer instanceof HTMLElement) {
+        outerContainer.style.background = 'transparent';
+        outerContainer.style.border = 'none';
+        outerContainer.style.boxShadow = 'none';
+      }
+      return;
+    }
+    
+    // Reset outer container styles when not transparent
+    if (outerContainer && outerContainer instanceof HTMLElement) {
+      outerContainer.style.background = '';
+      outerContainer.style.border = '';
+      outerContainer.style.boxShadow = '';
+    }
+    
     if (!profileCard) return;
 
     const colorScheme = params?.colorScheme || 'default';
@@ -646,7 +668,7 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
     } else {
       profileCard.removeAttribute('style');
     }
-  }, [params?.colorScheme, params?.primaryColor, params?.accentColor, dstn]);
+  }, [params?.colorScheme, params?.primaryColor, params?.accentColor, params?.transparent, dstn]);
 
   // Ensure sections expand properly after render
   useEffect(() => {

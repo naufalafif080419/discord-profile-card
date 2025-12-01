@@ -22,6 +22,7 @@ export interface UrlParams {
   displayNameColor?: string;
   displayNameGradientStart?: string;
   displayNameGradientEnd?: string;
+  transparent?: boolean;
 }
 
 export function parseUrlParams(searchParams: URLSearchParams): UrlParams {
@@ -39,6 +40,7 @@ export function parseUrlParams(searchParams: URLSearchParams): UrlParams {
   params.hideRecentActivity = searchParams.get('hideRecentActivity') === '1';
   params.hideLastSeen = searchParams.get('hideLastSeen') === '1';
   params.hideDisplayName = searchParams.get('hideDisplayName') === '1';
+  params.transparent = searchParams.get('transparent') === 'true' || searchParams.get('transparent') === '1';
   
   const rawgApiKey = searchParams.get('rawgApiKey');
   if (rawgApiKey) params.rawgApiKey = rawgApiKey;
@@ -112,6 +114,7 @@ export function buildUrl(baseUrl: string, params: UrlParams): string {
   if (params.hideRecentActivity) url.searchParams.set('hideRecentActivity', '1');
   if (params.hideLastSeen) url.searchParams.set('hideLastSeen', '1');
   if (params.hideDisplayName) url.searchParams.set('hideDisplayName', '1');
+  if (params.transparent) url.searchParams.set('transparent', 'true');
   // Don't include rawgApiKey in URL for security - it's stored in localStorage
   if (params.colorScheme) url.searchParams.set('colorScheme', params.colorScheme);
   if (params.primaryColor) url.searchParams.set('primaryColor', params.primaryColor);
