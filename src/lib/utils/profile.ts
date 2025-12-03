@@ -41,7 +41,10 @@ export function decodeBadgesFromFlags(publicFlags: number): BadgeInfo[] {
 
 export function extractBadges(lanyard: LanyardResponse['data'] | null, dstn: DstnResponse | null): BadgeInfo[] {
   // Get badges from dstn.to API first (detailed badges with descriptions and links)
+  // IMPORTANT: Preserve the exact order from the API response - do not sort!
   if (dstn?.badges && Array.isArray(dstn.badges)) {
+    // Map badges in the exact order they appear in the API response
+    // The API already returns badges in the correct Discord order
     return dstn.badges.map(badge => ({
       name: badge.description || badge.id || 'Badge',
       icon: badge.icon ? `https://cdn.discordapp.com/badge-icons/${badge.icon}.png` : '',
