@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }: EmbedPageProps): Promis
         title: 'Discord Profile Card',
         description: 'View Discord user profile card',
         type: 'website',
-        url: `https://discord-card-generator.vercel.app/embed?id=${userId}`,
+        url: `https://discord-card.nopalinto.dev/embed?id=${userId}`,
       },
       twitter: {
         card: 'summary_large_image',
@@ -59,7 +59,7 @@ export async function generateMetadata({ searchParams }: EmbedPageProps): Promis
       description = cleanBio.length < bio.length ? `${cleanBio}...` : cleanBio;
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://discord-card-generator.vercel.app';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://discord-card.nopalinto.dev';
     const embedUrl = `${siteUrl}/embed?id=${userId}`;
     const ogImageUrl = `${siteUrl}/api/og?id=${userId}`;
     
@@ -97,7 +97,7 @@ export async function generateMetadata({ searchParams }: EmbedPageProps): Promis
         title: 'Discord Profile Card',
         description: 'View Discord user profile card',
         type: 'website',
-        url: `https://discord-card-generator.vercel.app/embed?id=${userId}`,
+        url: `https://discord-card.nopalinto.dev/embed?id=${userId}`,
       },
       twitter: {
         card: 'summary_large_image',
