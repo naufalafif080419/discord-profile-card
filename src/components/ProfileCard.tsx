@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { LanyardResponse, LanyardActivity, LanyardSpotify } from '@/lib/types/lanyard';
 import type { DstnResponse } from '@/lib/types/dstn';
 import type { LanternResponse } from '@/lib/types/lantern';
@@ -402,13 +402,12 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
   const dstnUser = dstn?.user || null;
 
   // Store last known activities and spotify when online/idle/dnd
-  const lastKnownActivitiesRef = useRef<LanyardActivity[] | null>(null);
-  const lastKnownSpotifyRef = useRef<LanyardSpotify | null>(null);
+  // Use state instead of refs so component re-renders when server data loads
+  const [lastKnownActivities, setLastKnownActivities] = useState<LanyardActivity[] | null>(null);
+  const [lastKnownSpotify, setLastKnownSpotify] = useState<LanyardSpotify | null>(null);
   
-  // Get user ID for localStorage keys
+  // Get user ID for API calls
   const userId = user?.id || dstnUser?.id || null;
-  const activitiesStorageKey = userId ? `discord-last-activities-${userId}` : null;
-  const spotifyStorageKey = userId ? `discord-last-spotify-${userId}` : null;
 
   const avatarUrl = useMemo(() => getAvatarUrl(user, dstnUser), [user, dstnUser]);
   const displayName = useMemo(() => getDisplayName(user, dstnUser), [user, dstnUser]);
@@ -568,63 +567,64 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
     return `linear-gradient(${mainRgb} 0%, ${light1Rgb} 50%, ${light2Rgb} 100%)`;
   }, [params?.displayNameEffect, displayNameColorVariants]);
 
-  // Load last known activities and Spotify from localStorage on mount
+  // Load last known activities and Spotify from server on mount
   useEffect(() => {
-    if (typeof window === 'undefined' || !activitiesStorageKey || !spotifyStorageKey) return;
+    if (typeof window === 'undefined' || !userId) return;
     
-    try {
-      const storedActivities = localStorage.getItem(activitiesStorageKey);
-      const storedSpotify = localStorage.getItem(spotifyStorageKey);
-      
-      if (storedActivities) {
-        const parsed = JSON.parse(storedActivities);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          lastKnownActivitiesRef.current = parsed;
+    // Fetch stored activities from server
+    fetch(`/api/activities?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.activities && Array.isArray(data.activities) && data.activities.length > 0) {
+          setLastKnownActivities(data.activities);
         }
-      }
-      
-      if (storedSpotify) {
-        const parsed = JSON.parse(storedSpotify);
-        if (parsed && typeof parsed === 'object') {
-          lastKnownSpotifyRef.current = parsed;
+        if (data.spotify && typeof data.spotify === 'object') {
+          setLastKnownSpotify(data.spotify);
         }
-      }
-    } catch (error) {
-      // Silently fail if localStorage is unavailable or data is corrupted
-      console.warn('Failed to load last known activities from localStorage:', error);
-    }
-  }, [activitiesStorageKey, spotifyStorageKey]);
+      })
+      .catch(error => {
+        // Silently fail if API is unavailable
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load last known activities from server:', error);
+        }
+      });
+  }, [userId]);
 
-  // Store last known activities when online/idle/dnd (both in refs and localStorage)
+  // Store last known activities when online/idle/dnd (both in state and server)
   useEffect(() => {
-    if (status !== 'offline' && lanyard?.activities && lanyard.activities.length > 0) {
-      lastKnownActivitiesRef.current = lanyard.activities;
+    if (status !== 'offline' && userId) {
+      const activitiesToStore = lanyard?.activities || [];
+      const spotifyToStore = lanyard?.spotify || null;
       
-      // Persist to localStorage
-      if (typeof window !== 'undefined' && activitiesStorageKey) {
-        try {
-          localStorage.setItem(activitiesStorageKey, JSON.stringify(lanyard.activities));
-        } catch (error) {
-          // Silently fail if localStorage is unavailable
-          console.warn('Failed to save activities to localStorage:', error);
-        }
+      // Update state
+      if (activitiesToStore.length > 0) {
+        setLastKnownActivities(activitiesToStore);
+      }
+      if (spotifyToStore) {
+        setLastKnownSpotify(spotifyToStore);
+      }
+      
+      // Persist to server (only if we have activities or spotify to store)
+      if (activitiesToStore.length > 0 || spotifyToStore) {
+        fetch('/api/activities', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            activities: activitiesToStore,
+            spotify: spotifyToStore,
+          }),
+        }).catch(error => {
+          // Silently fail if API is unavailable
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Failed to save activities to server:', error);
+          }
+        });
       }
     }
-    
-    if (status !== 'offline' && lanyard?.spotify) {
-      lastKnownSpotifyRef.current = lanyard.spotify;
-      
-      // Persist to localStorage
-      if (typeof window !== 'undefined' && spotifyStorageKey) {
-        try {
-          localStorage.setItem(spotifyStorageKey, JSON.stringify(lanyard.spotify));
-        } catch (error) {
-          // Silently fail if localStorage is unavailable
-          console.warn('Failed to save Spotify to localStorage:', error);
-        }
-      }
-    }
-  }, [status, lanyard?.activities, lanyard?.spotify, activitiesStorageKey, spotifyStorageKey]);
+  }, [status, lanyard?.activities, lanyard?.spotify, userId]);
 
   // Get activities (non-listening, non-custom status)
   // Use last known activities when offline, current activities when online
@@ -632,24 +632,8 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
     let activitiesToUse: LanyardActivity[] = [];
     
     if (status === 'offline') {
-      // When offline, prefer refs (which may have been loaded from localStorage)
-      activitiesToUse = lastKnownActivitiesRef.current || lanyard?.activities || [];
-      
-      // If still empty, try loading from localStorage as fallback
-      if (activitiesToUse.length === 0 && typeof window !== 'undefined' && activitiesStorageKey) {
-        try {
-          const stored = localStorage.getItem(activitiesStorageKey);
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              activitiesToUse = parsed;
-              lastKnownActivitiesRef.current = parsed; // Update ref for consistency
-            }
-          }
-        } catch (error) {
-          // Silently fail
-        }
-      }
+      // When offline, use state (which may have been loaded from server)
+      activitiesToUse = lastKnownActivities || lanyard?.activities || [];
     } else {
       // When online, use current activities
       activitiesToUse = lanyard?.activities || [];
@@ -665,7 +649,7 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
       });
     }
     return filtered;
-  }, [lanyard, params?.hideAppId, status, activitiesStorageKey]);
+  }, [lanyard, params?.hideAppId, status, lastKnownActivities]);
 
   // Get listening activities
   // Use last known activities when offline, current activities when online
@@ -673,24 +657,8 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
     let activitiesToUse: LanyardActivity[] = [];
     
     if (status === 'offline') {
-      // When offline, prefer refs (which may have been loaded from localStorage)
-      activitiesToUse = lastKnownActivitiesRef.current || lanyard?.activities || [];
-      
-      // If still empty, try loading from localStorage as fallback
-      if (activitiesToUse.length === 0 && typeof window !== 'undefined' && activitiesStorageKey) {
-        try {
-          const stored = localStorage.getItem(activitiesStorageKey);
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              activitiesToUse = parsed;
-              lastKnownActivitiesRef.current = parsed; // Update ref for consistency
-            }
-          }
-        } catch (error) {
-          // Silently fail
-        }
-      }
+      // When offline, use state (which may have been loaded from server)
+      activitiesToUse = lastKnownActivities || lanyard?.activities || [];
     } else {
       // When online, use current activities
       activitiesToUse = lanyard?.activities || [];
@@ -706,36 +674,18 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
       });
     }
     return filtered;
-  }, [lanyard, params?.hideAppId, status, activitiesStorageKey]);
+  }, [lanyard, params?.hideAppId, status, lastKnownActivities]);
 
   // Use last known spotify when offline, current spotify when online
   const spotify = useMemo(() => {
     if (status === 'offline') {
-      // When offline, prefer refs (which may have been loaded from localStorage)
-      let spotifyData = lastKnownSpotifyRef.current || lanyard?.spotify || null;
-      
-      // If still null, try loading from localStorage as fallback
-      if (!spotifyData && typeof window !== 'undefined' && spotifyStorageKey) {
-        try {
-          const stored = localStorage.getItem(spotifyStorageKey);
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (parsed && typeof parsed === 'object') {
-              spotifyData = parsed;
-              lastKnownSpotifyRef.current = parsed; // Update ref for consistency
-            }
-          }
-        } catch (error) {
-          // Silently fail
-        }
-      }
-      
-      return spotifyData;
+      // When offline, use state (which may have been loaded from server)
+      return lastKnownSpotify || lanyard?.spotify || null;
     } else {
       // When online, use current Spotify
       return lanyard?.spotify || null;
     }
-  }, [status, lanyard?.spotify, spotifyStorageKey]);
+  }, [status, lanyard?.spotify, lastKnownSpotify]);
 
   // Apply theme colors if default scheme
   useEffect(() => {
