@@ -590,13 +590,17 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
       });
   }, [userId]);
 
-  // Store last known activities when online/idle/dnd (both in state and server)
+  // Store last known activities whenever they change (regardless of status)
+  // This ensures we always capture the most recent activities, even when user goes offline
   useEffect(() => {
-    if (status !== 'offline' && userId) {
-      const activitiesToStore = lanyard?.activities || [];
-      const spotifyToStore = lanyard?.spotify || null;
-      
-      // Update state
+    if (!userId) return;
+    
+    const activitiesToStore = lanyard?.activities || [];
+    const spotifyToStore = lanyard?.spotify || null;
+    
+    // Only save if we have activities or spotify data
+    if (activitiesToStore.length > 0 || spotifyToStore) {
+      // Update state immediately
       if (activitiesToStore.length > 0) {
         setLastKnownActivities(activitiesToStore);
       }
@@ -604,27 +608,26 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
         setLastKnownSpotify(spotifyToStore);
       }
       
-      // Persist to server (only if we have activities or spotify to store)
-      if (activitiesToStore.length > 0 || spotifyToStore) {
-        fetch('/api/activities', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId,
-            activities: activitiesToStore,
-            spotify: spotifyToStore,
-          }),
-        }).catch(error => {
-          // Silently fail if API is unavailable
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Failed to save activities to server:', error);
-          }
-        });
-      }
+      // Always persist to server when activities change (even if offline)
+      // This ensures we capture the most recent activities before user goes offline
+      fetch('/api/activities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          activities: activitiesToStore,
+          spotify: spotifyToStore,
+        }),
+      }).catch(error => {
+        // Silently fail if API is unavailable
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to save activities to server:', error);
+        }
+      });
     }
-  }, [status, lanyard?.activities, lanyard?.spotify, userId]);
+  }, [lanyard?.activities, lanyard?.spotify, userId]); // Removed 'status' dependency to save regardless of status
 
   // Get activities (non-listening, non-custom status)
   // Use last known activities when offline, current activities when online

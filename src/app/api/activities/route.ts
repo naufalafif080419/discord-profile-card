@@ -10,8 +10,8 @@ const activityStore = new Map<string, {
   updatedAt: number;
 }>();
 
-// Clean up old entries (older than 7 days)
-const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+// Clean up old entries (older than 90 days)
+const MAX_AGE = 90 * 24 * 60 * 60 * 1000; // 90 days - activities persist for a long time
 
 function cleanupOldEntries() {
   const now = Date.now();
