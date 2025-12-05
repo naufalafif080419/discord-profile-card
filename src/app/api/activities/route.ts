@@ -39,18 +39,30 @@ async function getRedisClient() {
     // Port 6380 is typically TLS, 6379 is typically non-TLS
     const needsTls = redisUrl.startsWith('rediss://') || redisUrl.includes(':6380');
 
-    redis = createClient({
-      url: redisUrl,
-      socket: {
-        tls: needsTls,
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            return new Error('Too many reconnection attempts');
-          }
-          return Math.min(retries * 100, 3000);
+    // Configure Redis client with proper socket options
+    const reconnectStrategy = (retries: number) => {
+      if (retries > 10) {
+        return new Error('Too many reconnection attempts');
+      }
+      return Math.min(retries * 100, 3000);
+    };
+
+    if (needsTls) {
+      redis = createClient({
+        url: redisUrl,
+        socket: {
+          tls: true,
+          reconnectStrategy,
         },
-      },
-    });
+      });
+    } else {
+      redis = createClient({
+        url: redisUrl,
+        socket: {
+          reconnectStrategy,
+        },
+      });
+    }
 
     redis.on('error', (err) => {
       console.error('Redis Client Error:', err);
