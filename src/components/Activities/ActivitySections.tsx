@@ -14,7 +14,7 @@ interface ActivitySectionsProps {
   hideActivityTime?: boolean;
   hideRecentActivity?: boolean;
   status?: 'online' | 'idle' | 'dnd' | 'offline';
-  rawgApiKey?: string;
+  userId?: string;
 }
 
 function ActivitySectionsComponent({
@@ -26,7 +26,7 @@ function ActivitySectionsComponent({
   hideActivityTime,
   hideRecentActivity,
   status = 'offline',
-  rawgApiKey,
+  userId,
 }: ActivitySectionsProps) {
   const isOffline = status === 'offline';
   
@@ -43,7 +43,7 @@ function ActivitySectionsComponent({
                 key={activity.id || index}
                 activity={activity}
                 hideTimestamp={hideActivityTime}
-                rawgApiKey={rawgApiKey}
+                userId={userId}
               />
             ))}
           </div>
@@ -84,7 +84,7 @@ function ActivitySectionsComponent({
                 key={activity.id || index}
                 activity={activity}
                 hideTimestamp={true}
-                rawgApiKey={rawgApiKey}
+                userId={userId}
               />
             ))}
           </div>
@@ -126,7 +126,7 @@ const areEqual = (prev: ActivitySectionsProps, next: ActivitySectionsProps): boo
   prev.activities === next.activities &&
   prev.listeningActivities === next.listeningActivities &&
   prev.status === next.status &&
-  prev.rawgApiKey === next.rawgApiKey
+  prev.userId === next.userId
 );
 
 export const ActivitySections = React.memo(ActivitySectionsComponent, areEqual);

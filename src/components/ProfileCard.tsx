@@ -586,7 +586,7 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
         // Silently fail if API is unavailable
         if (process.env.NODE_ENV === 'development') {
           console.warn('Failed to load last known activities from server:', error);
-        }
+    }
       });
   }, [userId]);
 
@@ -597,13 +597,13 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
     
     const activitiesToStore = lanyard?.activities || [];
     const spotifyToStore = lanyard?.spotify || null;
-    
+      
     // Only save if we have activities or spotify data
     if (activitiesToStore.length > 0 || spotifyToStore) {
       // Update state immediately
       if (activitiesToStore.length > 0) {
         setLastKnownActivities(activitiesToStore);
-      }
+        }
       if (spotifyToStore) {
         setLastKnownSpotify(spotifyToStore);
       }
@@ -918,7 +918,7 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
             hideActivityTime={params?.hideActivityTime}
             hideRecentActivity={params?.hideRecentActivity}
             status={status}
-            rawgApiKey={params?.rawgApiKey}
+            userId={userId}
           />
         </div>
       </div>

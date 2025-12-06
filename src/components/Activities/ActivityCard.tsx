@@ -9,7 +9,7 @@ import { useRawgGame } from '@/hooks/useRawgGame';
 interface ActivityCardProps {
   activity: LanyardActivity;
   hideTimestamp?: boolean;
-  rawgApiKey?: string;
+  userId?: string;
 }
 
 const ICON_VSCODE = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path fill="#007ACC" d="M243.7 49.7 192 32 76 139.1 125.5 188z"/><path fill="#1F9CF0" d="m192 32-16.5 192 68.2-29.7V49.7z"/><path fill="#0065A9" d="m44.3 105.9 81.2 81.2 21.3-21.3-60-60L44.3 105.9z"/><path fill="#1F9CF0" d="m44.3 150.1 31.3 31.3 61.2-61.2-21.3-21.3-71.2 51.2z"/></svg>`);
@@ -44,16 +44,16 @@ function activityHeader(type: number): string {
   }
 }
 
-export function ActivityCard({ activity, hideTimestamp = false, rawgApiKey }: ActivityCardProps) {
+export function ActivityCard({ activity, hideTimestamp = false, userId }: ActivityCardProps) {
   const [elapsed, setElapsed] = useState('');
 
   // Check if this is a game activity (Playing or Competing)
   const isGameActivity = activity.type === 0 || activity.type === 5;
   
-  // Fetch RAWG game data for game activities (only if API key is provided)
+  // Fetch RAWG game data for game activities (API key is stored server-side)
   const { game: rawgGame, imageUrl: rawgImageUrl, loading: rawgLoading } = useRawgGame(
     isGameActivity ? activity.name : undefined,
-    rawgApiKey
+    userId
   );
 
   useEffect(() => {

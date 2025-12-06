@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { searchGame, getGameImageUrl } from '@/lib/api/rawg';
 import type { RawgGameDetails } from '@/lib/types/rawg';
 
 interface UseRawgGameResult {
@@ -12,10 +11,12 @@ interface UseRawgGameResult {
 
 /**
  * Hook to fetch RAWG game data for a Discord activity
+ * Uses server-side API to keep API key secure
  * Optimized to reduce API requests with debouncing and request deduplication
  */
-export function useRawgGame(activityName: string | undefined, apiKey: string | undefined): UseRawgGameResult {
+export function useRawgGame(activityName: string | undefined, userId: string | undefined): UseRawgGameResult {
   const [game, setGame] = useState<RawgGameDetails | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentRequestRef = useRef<string | null>(null);
@@ -27,8 +28,9 @@ export function useRawgGame(activityName: string | undefined, apiKey: string | u
       debounceTimerRef.current = null;
     }
 
-    if (!apiKey || !activityName || activityName.trim() === '') {
+    if (!userId || !activityName || activityName.trim() === '') {
       setGame(null);
+      setImageUrl(null);
       setLoading(false);
       currentRequestRef.current = null;
       return;
@@ -76,11 +78,14 @@ export function useRawgGame(activityName: string | undefined, apiKey: string | u
       currentRequestRef.current = activityName;
       setLoading(true);
       
-      searchGame(activityName, apiKey)
-        .then((gameData) => {
+      // Fetch from server-side API (API key is stored server-side, never exposed)
+      fetch(`/api/rawg-game?userId=${encodeURIComponent(userId)}&gameName=${encodeURIComponent(activityName)}`)
+        .then(res => res.json())
+        .then((data: { game: RawgGameDetails | null; imageUrl: string | null }) => {
           // Only update if this is still the current request (user hasn't switched games)
           if (currentRequestRef.current === activityName) {
-            setGame(gameData);
+            setGame(data.game);
+            setImageUrl(data.imageUrl);
             setLoading(false);
           }
         })
@@ -91,6 +96,7 @@ export function useRawgGame(activityName: string | undefined, apiKey: string | u
           // Only update if this is still the current request
           if (currentRequestRef.current === activityName) {
             setGame(null);
+            setImageUrl(null);
             setLoading(false);
           }
         });
@@ -103,9 +109,7 @@ export function useRawgGame(activityName: string | undefined, apiKey: string | u
         debounceTimerRef.current = null;
       }
     };
-  }, [activityName, apiKey]);
-
-  const imageUrl = getGameImageUrl(game);
+  }, [activityName, userId]);
 
   return {
     game,

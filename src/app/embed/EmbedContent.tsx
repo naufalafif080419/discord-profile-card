@@ -20,52 +20,8 @@ export function EmbedContent() {
   const urlParams = useUrlParams();
   const userId = urlParams.id || searchParams.get('id') || DEFAULT_USER_ID;
   
-  // Get RAWG API key from localStorage (not URL for security)
-  // Use state to listen to localStorage changes so it updates automatically
-  const [rawgApiKey, setRawgApiKey] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('rawgApiKey') || undefined;
-    }
-    return undefined;
-  });
-
-  // Listen to localStorage changes for rawgApiKey
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'rawgApiKey') {
-        setRawgApiKey(e.newValue || undefined);
-      }
-    };
-
-    // Listen to storage events (for cross-tab/window updates)
-    window.addEventListener('storage', handleStorageChange);
-
-    // Also poll localStorage periodically to catch same-tab updates
-    // (storage events only fire for changes from other tabs/windows)
-    const pollInterval = setInterval(() => {
-      const currentKey = localStorage.getItem('rawgApiKey') || undefined;
-      setRawgApiKey(prev => {
-        // Only update if it actually changed
-        if (prev !== currentKey) {
-          return currentKey;
-        }
-        return prev;
-      });
-    }, 500); // Check every 500ms
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(pollInterval);
-    };
-  }, []);
-  
-  // Update urlParams to include rawgApiKey from localStorage
-  const urlParamsWithRawg = useMemo(() => ({
-    ...urlParams,
-    rawgApiKey: rawgApiKey,
-  }), [urlParams, rawgApiKey]);
+  // RAWG API key is now stored server-side and accessed via userId
+  // No need to pass it to ProfileCard - it will fetch from server automatically
   const containerRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const [profileData, setProfileData] = useState<{
@@ -164,7 +120,7 @@ export function EmbedContent() {
             lanyard={profileData.lanyard}
             dstn={profileData.dstn}
             lantern={profileData.lantern}
-            params={urlParamsWithRawg}
+            params={urlParams}
           />
           </div>
         </div>

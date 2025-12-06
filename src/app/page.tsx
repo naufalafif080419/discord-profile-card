@@ -33,27 +33,65 @@ function HomePageContent() {
     return parsedUrlParams.id || DEFAULT_USER_ID;
   });
   
-  // Store RAWG API key in localStorage for security (not in URL)
-  const [rawgApiKey, setRawgApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      // Check localStorage first
-      const stored = localStorage.getItem('rawgApiKey');
-      if (stored) return stored;
-    }
-    // Fallback to URL param for backward compatibility (but don't save it)
-    return parsedUrlParams.rawgApiKey || '';
-  });
+  // Store RAWG API key on server (associated with userId)
+  const [rawgApiKey, setRawgApiKey] = useState('');
+  const currentUserIdRef = useRef(userId);
 
-  // Save API key to localStorage when it changes
+  // Load RAWG API key from server when userId is available
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (rawgApiKey) {
-        localStorage.setItem('rawgApiKey', rawgApiKey);
-      } else {
-        localStorage.removeItem('rawgApiKey');
-      }
+    if (typeof window === 'undefined' || !userId || !isValidDiscordId(userId)) {
+      setRawgApiKey('');
+      return;
     }
-  }, [rawgApiKey]);
+
+    // Only fetch if userId changed
+    if (currentUserIdRef.current === userId && rawgApiKey) {
+      return;
+    }
+
+    currentUserIdRef.current = userId;
+
+    // Fetch stored API key from server
+    fetch(`/api/rawg-key?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.apiKey) {
+          setRawgApiKey(data.apiKey);
+        }
+      })
+      .catch(error => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load RAWG API key from server:', error);
+        }
+      });
+  }, [userId]);
+
+  // Save API key to server when it changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !userId || !isValidDiscordId(userId)) {
+      return;
+    }
+
+    // Debounce saves to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      fetch('/api/rawg-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          apiKey: rawgApiKey,
+        }),
+      }).catch(error => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to save RAWG API key to server:', error);
+        }
+      });
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [rawgApiKey, userId]);
   
   // Initialize display options from URL params
   const [displayOptions, setDisplayOptions] = useState(() => ({
@@ -194,7 +232,7 @@ function HomePageContent() {
     hideRecentActivity: displayOptions.hideRecentActivity,
     hideLastSeen: displayOptions.hideLastSeen,
     // Don't include rawgApiKey in URL params for security
-    // It will be read from localStorage in the embed page
+    // It's stored server-side and accessed via userId
     colorScheme,
     primaryColor: colorScheme === 'custom' ? primaryColor.replace('#', '') : undefined,
     accentColor: colorScheme === 'custom' ? accentColor.replace('#', '') : undefined,
