@@ -918,7 +918,7 @@ export function ProfileCard({ lanyard, dstn, lantern, params }: ProfileCardProps
             hideActivityTime={params?.hideActivityTime}
             hideRecentActivity={params?.hideRecentActivity}
             status={status}
-            userId={userId}
+            userId={userId || undefined}
           />
         </div>
       </div>
