@@ -18,8 +18,41 @@ export function useRawgGame(activityName: string | undefined, userId: string | u
   const [game, setGame] = useState<RawgGameDetails | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentRequestRef = useRef<string | null>(null);
+
+  // Listen for API key removal/update events to force refresh
+  useEffect(() => {
+    const handleApiKeyChange = (event: CustomEvent<{ userId: string }>) => {
+      // Only process events relevant to the current userId
+      if (event.detail?.userId !== userId) {
+        return;
+      }
+      
+      // Clear any pending debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      
+      // Clear cached data when API key is removed or updated
+      setGame(null);
+      setImageUrl(null);
+      setLoading(false);
+      currentRequestRef.current = null;
+      
+      // Trigger refresh by updating refreshTrigger
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('rawg-api-key-removed', handleApiKeyChange as EventListener);
+    window.addEventListener('rawg-api-key-updated', handleApiKeyChange as EventListener);
+    return () => {
+      window.removeEventListener('rawg-api-key-removed', handleApiKeyChange as EventListener);
+      window.removeEventListener('rawg-api-key-updated', handleApiKeyChange as EventListener);
+    };
+  }, [userId]);
 
   useEffect(() => {
     // Clear any pending debounce timer
@@ -68,10 +101,15 @@ export function useRawgGame(activityName: string | undefined, userId: string | u
       return;
     }
 
-    // Debounce: wait 500ms before making request (reduces requests when switching games quickly)
+    // Determine debounce delay: faster if triggered by API key change, normal otherwise
+    const debounceDelay = refreshTrigger > 0 ? 100 : 500;
+
+    // Debounce: wait before making request (reduces requests when switching games quickly)
     debounceTimerRef.current = setTimeout(() => {
-      // Skip if we're already loading the same game
-      if (currentRequestRef.current === activityName) {
+      // Skip duplicate requests only if we're already loading the exact same game
+      // AND refreshTrigger hasn't changed (meaning it's not a forced refresh)
+      const shouldSkip = currentRequestRef.current === activityName && refreshTrigger === 0;
+      if (shouldSkip) {
         return;
       }
 
@@ -87,6 +125,10 @@ export function useRawgGame(activityName: string | undefined, userId: string | u
             setGame(data.game);
             setImageUrl(data.imageUrl);
             setLoading(false);
+            // Reset refreshTrigger after a successful fetch
+            if (refreshTrigger > 0) {
+              setRefreshTrigger(0);
+            }
           }
         })
         .catch((error) => {
@@ -98,9 +140,13 @@ export function useRawgGame(activityName: string | undefined, userId: string | u
             setGame(null);
             setImageUrl(null);
             setLoading(false);
+            // Reset refreshTrigger on error too
+            if (refreshTrigger > 0) {
+              setRefreshTrigger(0);
+            }
           }
         });
-    }, 500); // 500ms debounce
+    }, debounceDelay); // Use dynamic debounce delay
 
     // Cleanup function
     return () => {
@@ -109,7 +155,7 @@ export function useRawgGame(activityName: string | undefined, userId: string | u
         debounceTimerRef.current = null;
       }
     };
-  }, [activityName, userId]);
+  }, [activityName, userId, refreshTrigger]);
 
   return {
     game,

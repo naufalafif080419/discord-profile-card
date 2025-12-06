@@ -83,6 +83,27 @@ function HomePageContent() {
           userId,
           apiKey: rawgApiKey,
         }),
+      }).then(async (response) => {
+        // Only dispatch event if the request was successful
+        if (!response.ok) {
+          return;
+        }
+        
+        const data = await response.json();
+        if (!data.success) {
+          return;
+        }
+        
+        // Dispatch event when API key is updated or removed to trigger image refresh
+        // Add a small delay to ensure Redis has processed the update
+        setTimeout(() => {
+          const eventDetail = { detail: { userId } };
+          if (!rawgApiKey || rawgApiKey.trim() === '') {
+            window.dispatchEvent(new CustomEvent('rawg-api-key-removed', eventDetail));
+          } else {
+            window.dispatchEvent(new CustomEvent('rawg-api-key-updated', eventDetail));
+          }
+        }, 500); // 500ms delay to ensure Redis persistence
       }).catch(error => {
         if (process.env.NODE_ENV === 'development') {
           console.warn('Failed to save RAWG API key to server:', error);
