@@ -113,7 +113,10 @@ async function updateUserActivities(userId: string): Promise<boolean> {
 }
 
 // GET: Cron job endpoint to update activities for all tracked users
-// This should be called by Vercel Cron Jobs on a schedule
+// This is called by Vercel Cron Jobs once per day (Hobby plan limitation)
+// Note: On Hobby plan, cron jobs can only run once per day and timing is not guaranteed
+// The main solution is that /api/activities GET endpoint always fetches fresh data
+// This cron job serves as a backup to update activities daily
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron (optional security check)
   const authHeader = request.headers.get('authorization');
