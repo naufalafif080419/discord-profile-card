@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
         if (lanyardData) {
           const freshActivities = lanyardData.activities || [];
           const freshSpotify = lanyardData.spotify || null;
+          const userStatus = lanyardData.discord_status || 'offline';
           
           // Always prefer fresh data from Lanyard if it has activities
           // This ensures we get the latest activities even if user was online and no one accessed the website
@@ -148,21 +149,16 @@ export async function GET(request: NextRequest) {
               updatedAt: now,
             });
           } else {
-            // Lanyard returned data but no activities (user is offline and Lanyard cleared activities)
-            // Check if we have cached data that might be more recent
-            // If cache was updated recently (within last 30 minutes), it might have the last known activity
-            if (cachedData && cachedData.activities.length > 0) {
-              const cacheAge = now - cachedData.updatedAt;
-              // Use cached data if it's recent (within 30 minutes) - user might have just gone offline
-              if (cacheAge < 30 * 60 * 1000) { // 30 minutes
-                return NextResponse.json({
-                  activities: cachedData.activities,
-                  spotify: cachedData.spotify,
-                  updatedAt: cachedData.updatedAt,
-                });
-              }
-              // Cache is old, but we should still update it with current timestamp
-              // to indicate we checked, even though there are no current activities
+            // Lanyard returned data but no activities
+            // This could mean:
+            // 1. User is offline and Lanyard cleared activities
+            // 2. User is online but not playing anything
+            // 3. User was recently online but went offline before we could fetch
+            
+            // If user is currently online/idle/dnd but has no activities, return empty
+            // (they're not playing anything right now)
+            if (userStatus !== 'offline' && userStatus !== 'invisible') {
+              // User is online but not playing anything - return empty and update cache
               const emptyData: ActivityData = {
                 activities: [],
                 spotify: null,
@@ -170,8 +166,47 @@ export async function GET(request: NextRequest) {
               };
               const ttlSeconds = Math.floor(MAX_AGE / 1000);
               await client.setEx(key, ttlSeconds, JSON.stringify(emptyData));
+              
+              return NextResponse.json({
+                activities: [],
+                spotify: null,
+                updatedAt: now,
+              });
             }
-            // No activities in fresh data and cache is old or empty, return empty
+            
+            // User is offline - Lanyard has cleared activities
+            // The issue: If user was playing a new game but no one accessed the website,
+            // the cache wasn't updated and still has old data
+            // Solution: We need to check if Lanyard might still have the activity in its system
+            // But since Lanyard returned empty, we should check cache but be smart about it
+            
+            // Check if we have cached data
+            if (cachedData && cachedData.activities.length > 0) {
+              const cacheAge = now - cachedData.updatedAt;
+              
+              // IMPORTANT: The real issue is that cache might have old data (Roblox)
+              // if no one accessed the website while user was playing Visual Studio Code
+              // 
+              // Since Lanyard returned empty (user is offline), we can't get fresh data
+              // But we should still show cached data if it exists, as it's better than nothing
+              // The frontend will handle showing "Recent activity" label to indicate it's cached
+              
+              // Use cached data if it's not too old (within 2 hours)
+              // This is a compromise: we show cached data even if it might be slightly stale
+              // because when user is offline, we can't get fresh data from Lanyard
+              // The 2-hour window ensures we don't show very old data (like from days ago)
+              if (cacheAge < 2 * 60 * 60 * 1000) { // 2 hours
+                return NextResponse.json({
+                  activities: cachedData.activities,
+                  spotify: cachedData.spotify,
+                  updatedAt: cachedData.updatedAt,
+                });
+              }
+              // Cache is older than 2 hours - probably stale, return empty
+            }
+            
+            // No activities in fresh data and cache is old/empty or user is offline
+            // Return empty to avoid showing stale data
             return NextResponse.json({
               activities: [],
               spotify: null,
