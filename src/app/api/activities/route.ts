@@ -108,16 +108,24 @@ export async function GET(request: NextRequest) {
         // No cached data, fetch fresh from Lanyard
         shouldFetchFresh = true;
       } else {
-        cachedData = JSON.parse(storedJson);
+        const parsed = JSON.parse(storedJson) as ActivityData;
+        
+        // Validate parsed data structure
+        if (parsed && typeof parsed.updatedAt === 'number') {
+          cachedData = parsed;
 
-        // Check if data is expired (older than MAX_AGE)
-        if (now - cachedData.updatedAt > MAX_AGE) {
-          // Data expired, delete it and fetch fresh
-          await client.del(key);
-          cachedData = null;
-          shouldFetchFresh = true;
-        } else if (now - cachedData.updatedAt > CACHE_STALE_THRESHOLD) {
-          // Cache is stale (older than threshold), fetch fresh data
+          // Check if data is expired (older than MAX_AGE)
+          if (now - cachedData.updatedAt > MAX_AGE) {
+            // Data expired, delete it and fetch fresh
+            await client.del(key);
+            cachedData = null;
+            shouldFetchFresh = true;
+          } else if (now - cachedData.updatedAt > CACHE_STALE_THRESHOLD) {
+            // Cache is stale (older than threshold), fetch fresh data
+            shouldFetchFresh = true;
+          }
+        } else {
+          // Invalid data structure, fetch fresh
           shouldFetchFresh = true;
         }
       }
