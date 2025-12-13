@@ -23,6 +23,33 @@ function getKey(userId: string): string {
   return `discord-activities:${userId}`;
 }
 
+// Helper function to get Redis key for tracked users list
+function getTrackedUsersKey(): string {
+  return 'discord-activities:tracked-users';
+}
+
+// Track a user ID for background updates
+async function trackUser(userId: string, client: ReturnType<typeof createClient>): Promise<void> {
+  try {
+    const trackedUsersKey = getTrackedUsersKey();
+    const trackedUsersJson = await client.get(trackedUsersKey);
+    const trackedUsers: string[] = trackedUsersJson ? JSON.parse(trackedUsersJson) : [];
+    
+    // Add user ID if not already tracked
+    if (!trackedUsers.includes(userId)) {
+      trackedUsers.push(userId);
+      // Store for 90 days (same as activity data)
+      const ttlSeconds = Math.floor(MAX_AGE / 1000);
+      await client.setEx(trackedUsersKey, ttlSeconds, JSON.stringify(trackedUsers));
+    }
+  } catch (error) {
+    // Silently fail - tracking is not critical
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to track user:', error);
+    }
+  }
+}
+
 // Initialize Redis client
 // For Vercel KV or Redis Labs, use REDIS_URL or KV_URL environment variable
 let redis: ReturnType<typeof createClient> | null = null;
@@ -142,6 +169,9 @@ export async function GET(request: NextRequest) {
             // Update cache with fresh data
             const ttlSeconds = Math.floor(MAX_AGE / 1000);
             await client.setEx(key, ttlSeconds, JSON.stringify(freshData));
+            
+            // Track this user for background updates
+            await trackUser(userId, client);
             
             return NextResponse.json({
               activities: freshActivities,
@@ -308,6 +338,9 @@ export async function POST(request: NextRequest) {
       // Store in Redis with TTL of 90 days (in seconds)
       const ttlSeconds = Math.floor(MAX_AGE / 1000);
       await client.setEx(key, ttlSeconds, JSON.stringify(data));
+      
+      // Track this user for background updates
+      await trackUser(userId, client);
 
       return NextResponse.json({
         success: true,
