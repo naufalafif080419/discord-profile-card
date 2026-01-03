@@ -84,6 +84,11 @@ async function updateHistory(userId, newData) {
   const hasSpotify = !!newData.spotify;
   const trackChanged = hasSpotify && oldData.spotify?.track_id !== newData.spotify.track_id;
 
+  // Debug: Log if we see Spotify
+  if (hasSpotify && !hadSpotify) {
+      console.log(`[${userId}] Started listening to Spotify: ${newData.spotify.song}`);
+  }
+
   if (hadSpotify && (!hasSpotify || trackChanged)) {
     const historyItem = {
       type: 'spotify',
