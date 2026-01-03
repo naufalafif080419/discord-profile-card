@@ -45,16 +45,13 @@ function sanitizeActivityName(name) {
   return trimmed;
 }
 
-// Load internal state from Redis on startup
-async function loadInternalState(userId) {
-    try {
-        const state = await redis.get(getInternalStateKey(userId));
-        if (state) {
-            userStates.set(userId, JSON.parse(state));
-        }
-    } catch (e) {
-        console.error(`Failed to load internal state for ${userId}`, e);
+// Helper to resolve Discord asset images (handles mp: external images)
+function resolveImage(appId, assetId) {
+    if (!assetId) return null;
+    if (String(assetId).startsWith('mp:')) {
+        return `https://media.discordapp.net/${String(assetId).slice(3)}`;
     }
+    return `https://cdn.discordapp.com/app-assets/${appId}/${assetId}.png`;
 }
 
 // Detect if an activity is a music service
@@ -65,6 +62,18 @@ function getMusicType(name) {
     if (lowerName.includes('apple music')) return 'apple';
     if (lowerName.includes('tidal')) return 'tidal';
     return null;
+}
+
+// Load internal state from Redis on startup
+async function loadInternalState(userId) {
+    try {
+        const state = await redis.get(getInternalStateKey(userId));
+        if (state) {
+            userStates.set(userId, JSON.parse(state));
+        }
+    } catch (e) {
+        console.error(`Failed to load internal state for ${userId}`, e);
+    }
 }
 
 // Update history logic
@@ -140,12 +149,12 @@ async function updateHistory(userId, newData) {
                 name: musicType ? (oldActivity.details || oldActivity.name) : oldActivity.name, // Song name for music
                 details: musicType ? oldActivity.state : oldActivity.details, // Artist for music
                 state: oldActivity.state,
-                image: oldActivity.assets?.large_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.large_image}.png` : null,
+                image: resolveImage(oldActivity.application_id, oldActivity.assets?.large_image),
                 timestamp: now,
                 metadata: {
                     application_id: oldActivity.application_id,
                     duration: duration,
-                    small_image: oldActivity.assets?.small_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.small_image}.png` : null,
+                    small_image: resolveImage(oldActivity.application_id, oldActivity.assets?.small_image),
                     small_text: oldActivity.assets?.small_text,
                     album: musicType ? oldActivity.assets?.large_text : undefined
                 }
