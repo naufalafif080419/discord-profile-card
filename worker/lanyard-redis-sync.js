@@ -105,7 +105,9 @@ async function updateHistory(userId, newData) {
                 timestamp: now,
                 metadata: {
                     application_id: oldActivity.application_id,
-                    duration: duration
+                    duration: duration,
+                    small_image: oldActivity.assets?.small_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.small_image}.png` : null,
+                    small_text: oldActivity.assets?.small_text
                 }
             };
             await redis.lPush(historyKey, JSON.stringify(historyItem));

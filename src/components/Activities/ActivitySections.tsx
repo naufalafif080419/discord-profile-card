@@ -106,7 +106,10 @@ function ActivitySectionsComponent({
                     assets: {
                         large_image: item.image ? 'external' : undefined,
                         large_text: item.name,
-                        external_url: item.image
+                        small_image: item.metadata?.small_image ? 'external' : undefined,
+                        small_text: item.metadata?.small_text,
+                        external_url: item.image,
+                        small_external_url: item.metadata?.small_image
                     } as any,
                     timestamps: { start: item.timestamp - (item.metadata?.duration || 0) }
                   } as any}

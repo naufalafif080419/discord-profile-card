@@ -88,7 +88,7 @@ export function ActivityCard({ activity, hideTimestamp = false, userId }: Activi
   const discordLargeUrl = resolveAssetImage(activity.application_id, activity.assets?.large_image, (activity as any).assets?.external_url);
   const largeUrl = discordLargeUrl || rawgImageUrl || placeholder(120, 120);
   
-  const smallUrl = resolveAssetImage(activity.application_id, activity.assets?.small_image) || 
+  const smallUrl = resolveAssetImage(activity.application_id, activity.assets?.small_image, (activity as any).assets?.small_external_url) || 
     (String(activity.name).toLowerCase().includes('code') ? ICON_VSCODE : '');
 
   // Keep original Discord tooltip (no RAWG metadata)
