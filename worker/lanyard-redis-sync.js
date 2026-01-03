@@ -100,7 +100,8 @@ async function updateHistory(userId, newData) {
             const historyItem = {
                 type: 'activity',
                 name: oldActivity.name,
-                details: oldActivity.details || oldActivity.state,
+                details: oldActivity.details,
+                state: oldActivity.state,
                 image: oldActivity.assets?.large_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.large_image}.png` : null,
                 timestamp: now,
                 metadata: {

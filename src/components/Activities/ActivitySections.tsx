@@ -103,6 +103,7 @@ function ActivitySectionsComponent({
                     type: 0,
                     name: item.name,
                     details: item.details,
+                    state: item.state,
                     assets: {
                         large_image: item.image ? 'external' : undefined,
                         large_text: item.name,
