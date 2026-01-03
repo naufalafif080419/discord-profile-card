@@ -103,7 +103,11 @@ export function SpotifyCard({ spotify, activity, type = 'spotify', hideTimestamp
       <div className="activity-card-body">
         <div className="activity-content">
           <div className="activity-image">
-            <img alt={escapeHtml(title || serviceName) || 'Album art'} src={sanitizeExternalURL(art)} data-tip={escapeHtml(title || serviceName)} />
+            <img 
+              alt={escapeHtml(title || serviceName) || 'Album art'} 
+              src={sanitizeExternalURL(art) || sanitizeExternalURL(icon)} 
+              data-tip={escapeHtml(title || serviceName)} 
+            />
             <div className="smallImageContainer_ef9ae7 activity-small-thumbnail" data-tip={serviceName}>
               <img className="contentImage__42bf5 contentImage_ef9ae7" alt={serviceName} src={sanitizeExternalURL(icon)} />
               <span style={{ display: 'none' }}></span>
