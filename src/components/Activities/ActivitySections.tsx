@@ -3,7 +3,7 @@
 import React from 'react';
 import type { LanyardActivity, LanyardSpotify } from '@/lib/types/lanyard';
 import { ActivityCard } from './ActivityCard';
-import { SpotifyCard } from './SpotifyCard';
+import { MusicCard } from './MusicCard';
 
 interface ActivitySectionsProps {
   activities: LanyardActivity[];
@@ -34,7 +34,7 @@ function ActivitySectionsComponent({
 
   // Process history data if available
   const historyActivities = history?.filter(h => h.type === 'activity') || [];
-  const historySongs = history?.filter(h => h.type === 'spotify') || [];
+  const historySongs = history?.filter(h => h.type === 'spotify' || h.type === 'apple' || h.type === 'tidal') || [];
   
   return (
     <>
@@ -63,14 +63,14 @@ function ActivitySectionsComponent({
         >
           <div id="music-list" className="music-list">
             {!hideSpotify && spotify && (
-              <SpotifyCard spotify={spotify} />
+              <MusicCard spotify={spotify} />
             )}
             {!hideSpotify && listeningActivities.map((activity, index) => {
               if (activity.name?.toLowerCase().includes('apple')) {
-                return <SpotifyCard key={`apple-${index}`} activity={activity} type="apple" />;
+                return <MusicCard key={`apple-${index}`} activity={activity} type="apple" />;
               }
               if (activity.name?.toLowerCase().includes('tidal')) {
-                return <SpotifyCard key={`tidal-${index}`} activity={activity} type="tidal" />;
+                return <MusicCard key={`tidal-${index}`} activity={activity} type="tidal" />;
               }
               return null;
             })}
@@ -131,11 +131,12 @@ function ActivitySectionsComponent({
           </div>
           <div id="recent-music-list" className="recent-music-list">
             {spotify ? (
-              <SpotifyCard spotify={spotify} hideTimestamp={true} />
+              <MusicCard spotify={spotify} hideTimestamp={true} />
             ) : (
               historySongs.slice(0, 1).map((item, index) => (
-                <SpotifyCard 
+                <MusicCard 
                   key={`hist-song-${index}`}
+                  type={item.type}
                   spotify={{
                     song: item.name,
                     artist: item.details,

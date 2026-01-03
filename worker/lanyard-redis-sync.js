@@ -57,6 +57,16 @@ async function loadInternalState(userId) {
     }
 }
 
+// Detect if an activity is a music service
+function getMusicType(name) {
+    if (!name) return null;
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('spotify')) return 'spotify';
+    if (lowerName.includes('apple music')) return 'apple';
+    if (lowerName.includes('tidal')) return 'tidal';
+    return null;
+}
+
 // Update history logic
 async function updateHistory(userId, newData) {
   let oldData = userStates.get(userId);
@@ -79,15 +89,10 @@ async function updateHistory(userId, newData) {
     return;
   }
 
-  // 1. Check for Spotify song completion/change
+  // 1. Check for Spotify song completion/change (Lanyard native field)
   const hadSpotify = !!oldData.spotify;
   const hasSpotify = !!newData.spotify;
   const trackChanged = hasSpotify && oldData.spotify?.track_id !== newData.spotify.track_id;
-
-  // Debug: Log if we see Spotify
-  if (hasSpotify && !hadSpotify) {
-      console.log(`[${userId}] Started listening to Spotify: ${newData.spotify.song}`);
-  }
 
   if (hadSpotify && (!hasSpotify || trackChanged)) {
     const historyItem = {
@@ -102,21 +107,21 @@ async function updateHistory(userId, newData) {
       }
     };
     await redis.lPush(historyKey, JSON.stringify(historyItem));
-    await redis.lTrim(historyKey, 0, 19); // Keep last 20
+    await redis.lTrim(historyKey, 0, 19);
     console.log(`[${userId}] Logged Spotify history: ${historyItem.name}`);
   }
 
-  // 2. Check for Activity completion
-  // Find activities that were present but are now gone
+  // 2. Check for Activity completion (including Apple/Tidal)
   const oldActivities = oldData.activities || [];
   const newActivities = newData.activities || [];
   
   for (const oldActivity of oldActivities) {
-    // Skip custom status and spotify (handled separately)
-    if (oldActivity.type === 4 || oldActivity.type === 2) continue;
+    // Skip custom status
+    if (oldActivity.type === 4) continue;
 
+    const musicType = getMusicType(oldActivity.name);
+    
     // Check if this specific activity is gone or restarted
-    // We match by name and application_id
     const isStillActive = newActivities.find(
         newA => newA.name === oldActivity.name && newA.application_id === oldActivity.application_id
     );
@@ -128,12 +133,12 @@ async function updateHistory(userId, newData) {
             duration = now - oldActivity.timestamps.start;
         }
 
-        // Only log if it lasted at least 1 minute
-        if (duration > 60000) {
+        // Only log if it lasted at least 1 minute (for games) OR if it's music (any duration)
+        if (duration > 60000 || musicType) {
             const historyItem = {
-                type: 'activity',
-                name: oldActivity.name,
-                details: oldActivity.details,
+                type: musicType || 'activity', // 'apple', 'tidal', or 'activity'
+                name: musicType ? (oldActivity.details || oldActivity.name) : oldActivity.name, // Song name for music
+                details: musicType ? oldActivity.state : oldActivity.details, // Artist for music
                 state: oldActivity.state,
                 image: oldActivity.assets?.large_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.large_image}.png` : null,
                 timestamp: now,
@@ -141,12 +146,13 @@ async function updateHistory(userId, newData) {
                     application_id: oldActivity.application_id,
                     duration: duration,
                     small_image: oldActivity.assets?.small_image ? `https://cdn.discordapp.com/app-assets/${oldActivity.application_id}/${oldActivity.assets.small_image}.png` : null,
-                    small_text: oldActivity.assets?.small_text
+                    small_text: oldActivity.assets?.small_text,
+                    album: musicType ? oldActivity.assets?.large_text : undefined
                 }
             };
             await redis.lPush(historyKey, JSON.stringify(historyItem));
-            await redis.lTrim(historyKey, 0, 19); // Keep last 20
-            console.log(`[${userId}] Logged Activity history: ${historyItem.name}`);
+            await redis.lTrim(historyKey, 0, 19); 
+            console.log(`[${userId}] Logged ${historyItem.type} history: ${historyItem.name}`);
         }
     }
   }
