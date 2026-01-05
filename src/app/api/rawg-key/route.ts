@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from 'redis';
 import { isValidDiscordId } from '@/lib/utils/validation';
+import { encrypt, decrypt } from '@/lib/encryption';
 
 // Helper function to get Redis key for a user's RAWG API key
 function getKey(userId: string): string {
@@ -75,9 +76,22 @@ export async function GET(request: NextRequest) {
     try {
       const client = await getRedisClient();
       const key = getKey(userId);
-      const apiKey = await client.get(key);
+      const encryptedApiKey = await client.get(key);
       
-      if (!apiKey) {
+      if (!encryptedApiKey) {
+        return NextResponse.json({
+          apiKey: null,
+          exists: false,
+        });
+      }
+
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = decrypt(encryptedApiKey);
+      } catch (e) {
+        console.error('Failed to decrypt API key for user:', userId, e);
+        // If decryption fails, we can't use the key
         return NextResponse.json({
           apiKey: null,
           exists: false,
@@ -135,8 +149,10 @@ export async function POST(request: NextRequest) {
       const key = getKey(userId);
       
       if (apiKey && apiKey.trim() !== '') {
+        // Encrypt the API key before storing
+        const encryptedApiKey = encrypt(apiKey.trim());
         // Store API key with no expiration (user can delete it manually)
-        await client.set(key, apiKey.trim());
+        await client.set(key, encryptedApiKey);
       } else {
         // Delete if empty
         await client.del(key);

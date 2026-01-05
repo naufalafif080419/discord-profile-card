@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from 'redis';
 import { isValidDiscordId } from '@/lib/utils/validation';
 import { searchGame, getGameImageUrl } from '@/lib/api/rawg';
+import { decrypt } from '@/lib/encryption';
 
 // Helper function to get Redis key for a user's RAWG API key
 function getKey(userId: string): string {
@@ -85,9 +86,21 @@ export async function GET(request: NextRequest) {
       // Get API key from Redis
       const client = await getRedisClient();
       const key = getKey(userId);
-      const apiKey = await client.get(key);
+      const encryptedApiKey = await client.get(key);
       
-      if (!apiKey) {
+      if (!encryptedApiKey) {
+        return NextResponse.json({
+          game: null,
+          imageUrl: null,
+        });
+      }
+
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = decrypt(encryptedApiKey);
+      } catch (e) {
+        console.error('Failed to decrypt API key for game search, User:', userId, e);
         return NextResponse.json({
           game: null,
           imageUrl: null,
