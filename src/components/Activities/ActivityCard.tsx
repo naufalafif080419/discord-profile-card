@@ -146,7 +146,7 @@ export function ActivityCard({ activity, hideTimestamp = false, userId }: Activi
               <div className="activity-artist">{escapeHtml(activity.state)}</div>
             )}
             {(hasElapsed || showStreak) && (
-              <div className="elapsed-row">
+              <div className="elapsed-row flex-wrap justify-center md:justify-start">
                 {hasElapsed && (
                   <div className="elapsed-pill">
                     <svg className="clock" viewBox="0 0 24 24" aria-hidden="true">

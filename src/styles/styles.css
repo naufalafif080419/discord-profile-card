@@ -1555,7 +1555,7 @@ word-break: break-word;
 .activity-title,
 .activity-artist {
 white-space: normal;
-text-overflow: clip;
+text-overflow: ellipsis;
 overflow: hidden;
 display: -webkit-box;
 -webkit-box-orient: vertical;
@@ -1718,6 +1718,64 @@ font-weight: 600;
 .container {
 max-width: 92vw;
 }
+}
+
+/* Mobile optimizations for Activity Cards */
+@media (max-width: 480px) {
+  .outer_c0bea0 {
+    width: calc(100vw - 20px);
+    max-width: 380px;
+  }
+
+  .discord-activity-card,
+  .discord-music-card {
+    height: auto;
+    min-height: 140px;
+    padding-bottom: 14px;
+  }
+
+  .activity-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .activity-image {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 10px;
+    margin: 0 auto;
+  }
+
+  .activity-small-thumbnail {
+    width: 20px !important;
+    height: 20px !important;
+    right: -4px !important;
+    bottom: -4px !important;
+  }
+
+  .activity-details {
+    text-align: center;
+    text-align-last: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .activity-title,
+  .activity-artist {
+    text-align: center;
+    text-align-last: center;
+    width: 100%;
+    -webkit-line-clamp: 2;
+  }
+
+  .elapsed-row {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 /* Controls (used in embed.html) */

@@ -6,6 +6,26 @@ const nextConfig = {
     unoptimized: true,
   },
   trailingSlash: true,
+  async headers() {
+    return [
+      {
+        source: "/embed/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            // This '*' is what makes it universal.
+            // It tells the browser ANY site can frame this content.
+            value: "frame-ancestors *",
+          },
+          {
+            key: "X-Frame-Options",
+            // We set this to ALLOWALL so older browsers don't block it either.
+            value: "ALLOWALL",
+          },
+        ],
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig
