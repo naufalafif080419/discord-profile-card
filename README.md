@@ -13,7 +13,7 @@
   Perfect for your GitHub Profile, Portfolio, or Obsidian notes.
 </p>
 
-[**✨ Create Your Card**](https://discord-card.nopalinto.dev)
+[**✨ Create Your Card**](https://i.ibb.co/BV1vXrjp/Screenshot-2026-01-06-185034.png)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [**🚀 Deploy Your Own**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fnopalinto%2Fdiscord-profile-card)
 &nbsp;&nbsp;•&nbsp;&nbsp;
@@ -49,7 +49,6 @@ Don't have space for a full card? Use these mini-widgets in your header or foote
 
 | **Widget** | **Preview** | **Copy Code** |
 | :--- | :--- | :--- |
-| **Activity Streak**<br>Tracks how many days you've been active. | ![Streak](https://discord-card.nopalinto.dev/api/badge/streak?id=915480322328649758&activity=Visual%20Studio%20Code&fire=true) | `https://discord-card.nopalinto.dev/api/badge/streak?id=YOUR_ID&activity=Visual%20Studio%20Code` |
 | **Status Shield**<br>Minimal online/offline indicator. | ![Status](https://discord-card.nopalinto.dev/api/badge/status?id=915480322328649758) | `https://discord-card.nopalinto.dev/api/badge/status?id=YOUR_ID` |
 | **Mini Spotify**<br>Slim player bar for your footer. | ![Spotify](https://discord-card.nopalinto.dev/api/badge/spotify?id=915480322328649758&width=300) | `https://discord-card.nopalinto.dev/api/badge/spotify?id=YOUR_ID` |
 
@@ -71,7 +70,7 @@ Use this iframe to get the full interactive experience.
 
 ```html
 <iframe 
-  src="https://discord-card.nopalinto.dev/embed?id=YOUR_ID&colorScheme=dark" 
+  src="https://discord-card.nopalinto.dev/embed?id=YOUR_ID" 
   width="380" height="600" 
   allowtransparency="true" frameborder="0"
 ></iframe>
