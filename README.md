@@ -4,7 +4,7 @@
 
 [![Typing SVG](https://readme-typing-svg.herokuapp.com?font=gg+sans&weight=700&size=28&pause=1000&color=5865F2&center=true&vCenter=true&width=600&lines=Generate+Beautiful+Profile+Cards;Real-time+Lanyard+Integration;Fully+Customizable+Themes;Live+Spotify+and+Game+Activity;Deploy+to+Vercel+in+Seconds)](https://git.io/typing-svg)
 
-<a href="https://discord-card.nopalinto.dev">
+<a href="[https://discord-card.nopalinto.dev](https://i.ibb.co/BV1vXrjp/Screenshot-2026-01-06-185034.png)">
   <img src="https://discord-card.nopalinto.dev/api/og?id=915480322328649758" height="300" alt="Live Discord Card Preview" />
 </a>
 
@@ -13,7 +13,7 @@
   Perfect for your GitHub Profile, Portfolio, or Obsidian notes.
 </p>
 
-[**✨ Create Your Card**](https://i.ibb.co/BV1vXrjp/Screenshot-2026-01-06-185034.png)
+[**✨ Create Your Card**](https://discord-card.nopalinto.dev/)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 [**🚀 Deploy Your Own**](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fnopalinto%2Fdiscord-profile-card)
 &nbsp;&nbsp;•&nbsp;&nbsp;
