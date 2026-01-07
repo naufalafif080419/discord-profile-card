@@ -1203,6 +1203,9 @@ opacity: 0;
 margin: 0 18px;
 transform: translateY(-16px) scale(0.92);
 filter: blur(14px);
+width: calc(100% - 36px);
+max-width: 100%;
+box-sizing: border-box;
 transition:
 max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
 opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
@@ -1239,6 +1242,9 @@ gap: 12px;
 opacity: 1;
 filter: blur(0px);
 transform: scale(1);
+width: 100%;
+max-width: 100%;
+box-sizing: border-box;
 transition:
 opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
 filter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -1423,6 +1429,9 @@ height: var(--activity-card-height);
 overflow: hidden;
 display: flex;
 flex-direction: column;
+width: 100%;
+max-width: 100%;
+box-sizing: border-box;
 --scale: clamp(0.60, calc(var(--activity-card-height) / 148px), 1.40);
 --min-footer: calc(32px * var(--scale));
 --pill-scale: clamp(0.75, calc(var(--scale) * var(--pill-scale-multiplier)), 1.20);
@@ -1494,6 +1503,10 @@ flex: 1;
 display: flex;
 flex-direction: column;
 min-height: 0;
+min-width: 0;
+max-width: 100%;
+width: 100%;
+box-sizing: border-box;
 padding: calc(4px * var(--scale)) calc(16px * var(--scale)) 0;
 padding-bottom: calc(var(--min-footer) + var(--footer-top-gap));
 }
@@ -1503,6 +1516,8 @@ display: flex;
 gap: calc(12px * var(--scale));
 align-items: flex-start;
 min-height: 0;
+min-width: 0;
+max-width: 100%;
 flex: 1;
 }
 
@@ -1549,6 +1564,8 @@ border-radius: 50% !important;
 .activity-details {
 flex: 1;
 min-width: 0;
+max-width: 100%;
+width: 100%;
 display: flex;
 flex-direction: column;
 text-align: justify;
@@ -1556,6 +1573,7 @@ text-align-last: left;
 text-justify: inter-word;
 hyphens: auto;
 word-break: break-word;
+box-sizing: border-box;
 }
 
 .activity-title,
@@ -1652,7 +1670,10 @@ box-shadow: 0 0 6px rgba(0,255,255,.4);
   align-items: center;
   margin-top: 1px;
   gap: calc(8px * var(--pill-scale));
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .elapsed-pill {
@@ -1673,6 +1694,7 @@ box-shadow: 0 0 6px rgba(0,255,255,.4);
   box-shadow: 0 0 0 1px rgba(0,0,0,.15) inset;
   white-space: nowrap;
   flex-shrink: 0;
+  flex-basis: auto;
 }
 
 .elapsed-pill .clock,
