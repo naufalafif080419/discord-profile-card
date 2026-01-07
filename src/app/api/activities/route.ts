@@ -12,14 +12,11 @@ import { CACHE_CONFIG } from '@/lib/constants';
 async function trackUser(userId: string, client: ReturnType<typeof createClient>): Promise<void> {
   try {
     const trackedUsersKey = RedisKeys.trackedUsers();
-    const trackedUsersJson = await client.get(trackedUsersKey);
-    const trackedUsers: string[] = trackedUsersJson ? JSON.parse(trackedUsersJson) : [];
-    
-    if (!trackedUsers.includes(userId)) {
-      trackedUsers.push(userId);
-      const ttlSeconds = Math.floor(CACHE_CONFIG.MAX_AGE_MS / 1000);
-      await client.setEx(trackedUsersKey, ttlSeconds, JSON.stringify(trackedUsers));
-    }
+    // Use Redis Set for atomic uniqueness
+    await client.sAdd(trackedUsersKey, userId);
+    // Refresh TTL
+    const ttlSeconds = Math.floor(CACHE_CONFIG.MAX_AGE_MS / 1000);
+    await client.expire(trackedUsersKey, ttlSeconds);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.warn('Failed to track user:', error);

@@ -776,7 +776,15 @@ export function ProfileCard({ lanyard, dstn, lantern, history, params, isVerifie
     } else if (colorScheme === 'light') {
       profileCard.setAttribute('style', 'background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)');
     } else if (colorScheme === 'custom' && params?.primaryColor && params?.accentColor) {
-      profileCard.setAttribute('style', `background: linear-gradient(135deg, #${params.primaryColor} 0%, #${params.accentColor} 100%)`);
+      // Validate hex codes to prevent CSS injection
+      const isValidHex = (color: string) => /^[0-9A-Fa-f]{6}$/.test(color);
+      
+      if (isValidHex(params.primaryColor) && isValidHex(params.accentColor)) {
+        profileCard.setAttribute('style', `background: linear-gradient(135deg, #${params.primaryColor} 0%, #${params.accentColor} 100%)`);
+      } else {
+        // Fallback to default if invalid
+        profileCard.removeAttribute('style');
+      }
     } else {
       profileCard.removeAttribute('style');
     }

@@ -33,19 +33,18 @@ async function main() {
 
     // 1. Remove from tracked users list
     const trackedUsersKey = 'discord-activities:tracked-users';
-    const trackedUsersJson = await client.get(trackedUsersKey);
     
-    if (trackedUsersJson) {
-      let trackedUsers = JSON.parse(trackedUsersJson);
-      if (trackedUsers.includes(userId)) {
-        trackedUsers = trackedUsers.filter(id => id !== userId);
-        await client.set(trackedUsersKey, JSON.stringify(trackedUsers));
-        console.log(`Removed ${userId} from tracked users list.`);
+    // Attempt to remove from Set (new way)
+    try {
+      const removed = await client.sRem(trackedUsersKey, userId);
+      if (removed) {
+         console.log(`Removed ${userId} from tracked users list (Set).`);
       } else {
-        console.log(`${userId} was not in tracked users list.`);
+         // Fallback/Check: If key is wrong type, might need manual cleanup
+         console.log(`${userId} was not in tracked users list (or key is wrong type).`);
       }
-    } else {
-      console.log('Tracked users list not found.');
+    } catch (e) {
+      console.warn('Error removing from tracked users list:', e.message);
     }
 
     // 2. Delete individual keys

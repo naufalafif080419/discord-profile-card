@@ -370,18 +370,18 @@ async function main() {
 
   // Load tracked users
   const trackedUsersKey = getTrackedUsersKey();
-  const trackedUsersJson = await redis.get(trackedUsersKey);
-  if (trackedUsersJson) {
-    const users = JSON.parse(trackedUsersJson);
+  try {
+    const users = await redis.sMembers(trackedUsersKey);
     users.forEach(id => trackedUsers.add(id));
     console.log(`Loaded ${trackedUsers.size} tracked users`);
+  } catch (e) {
+    console.warn('Failed to load tracked users (might be empty or wrong type):', e);
   }
 
   // Refresh tracked users list every minute
   setInterval(async () => {
-    const json = await redis.get(trackedUsersKey);
-    if (json) {
-      const users = JSON.parse(json);
+    try {
+      const users = await redis.sMembers(trackedUsersKey);
       let changed = false;
       users.forEach(id => {
         if (!trackedUsers.has(id)) {
@@ -397,6 +397,8 @@ async function main() {
             d: { subscribe_to_ids: Array.from(trackedUsers) },
         }));
       }
+    } catch (e) {
+      console.warn('Failed to refresh tracked users:', e);
     }
   }, 60000);
 

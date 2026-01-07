@@ -88,7 +88,7 @@ async function updateUserActivities(userId: string): Promise<boolean> {
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron (optional security check)
   const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -96,9 +96,8 @@ export async function GET(request: NextRequest) {
     const client = await getRedisClient();
     const trackedUsersKey = RedisKeys.trackedUsers();
     
-    // Get list of tracked user IDs
-    const trackedUsersJson = await client.get(trackedUsersKey);
-    const trackedUsers: string[] = trackedUsersJson ? JSON.parse(trackedUsersJson) : [];
+    // Get list of tracked user IDs from Redis Set
+    const trackedUsers = await client.sMembers(trackedUsersKey);
     
     if (trackedUsers.length === 0) {
       return NextResponse.json({
