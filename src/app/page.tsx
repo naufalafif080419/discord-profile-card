@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useLayoutEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { UserIdInput } from '@/components/Generator/UserIdInput';
 import { RawgApiKeyInput } from '@/components/Generator/RawgApiKeyInput';
 import { DisplayOptions } from '@/components/Generator/DisplayOptions';
@@ -25,6 +26,7 @@ const DEFAULT_USER_ID = '915480322328649758';
 
 function HomePageContent() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   
   // Parse URL params once (from incoming URL)
   const parsedUrlParams = useMemo(() => parseUrlParams(searchParams), [searchParams]);
@@ -32,6 +34,13 @@ function HomePageContent() {
   const [userId, setUserId] = useState(() => {
     return parsedUrlParams.id || DEFAULT_USER_ID;
   });
+
+  // If user logs in and we are on the default ID, switch to their ID
+  useEffect(() => {
+    if (session?.user?.id && userId === DEFAULT_USER_ID && !searchParams.get('id')) {
+      setUserId(session.user.id);
+    }
+  }, [session, userId, searchParams]);
   
   // Store RAWG API key on server (associated with userId)
   const [rawgApiKey, setRawgApiKey] = useState(() => {
@@ -304,6 +313,73 @@ function HomePageContent() {
       previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  // Fetch preferences from server when logged in
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/user/preferences')
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            // Apply saved preferences if they exist
+            if (data.displayOptions) setDisplayOptions(prev => ({ ...prev, ...data.displayOptions }));
+            if (data.colorScheme) setColorScheme(data.colorScheme);
+            if (data.primaryColor) setPrimaryColor(data.primaryColor);
+            if (data.accentColor) setAccentColor(data.accentColor);
+            if (data.bannerUrl) setBannerUrl(data.bannerUrl);
+            if (data.imageWidth) setImageWidth(data.imageWidth);
+            if (data.displayNameFont) setDisplayNameFont(data.displayNameFont);
+            if (data.displayNameEffect) setDisplayNameEffect(data.displayNameEffect);
+            if (data.displayNameColor) setDisplayNameColor(data.displayNameColor);
+            if (data.displayNameGradientStart) setDisplayNameGradientStart(data.displayNameGradientStart);
+            if (data.displayNameGradientEnd) setDisplayNameGradientEnd(data.displayNameGradientEnd);
+          }
+        })
+        .catch(err => console.error('Failed to load preferences:', err));
+    }
+  }, [session?.user?.id]);
+
+  // Save preferences to server when changed (debounced)
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const timeoutId = setTimeout(() => {
+      const preferences = {
+        displayOptions,
+        colorScheme,
+        primaryColor,
+        accentColor,
+        bannerUrl,
+        imageWidth,
+        displayNameFont,
+        displayNameEffect,
+        displayNameColor,
+        displayNameGradientStart,
+        displayNameGradientEnd,
+      };
+
+      fetch('/api/user/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      }).catch(err => console.error('Failed to save preferences:', err));
+    }, 2000); // 2 second debounce to avoid spamming while tweaking colors
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    session?.user?.id,
+    displayOptions,
+    colorScheme,
+    primaryColor,
+    accentColor,
+    bannerUrl,
+    imageWidth,
+    displayNameFont,
+    displayNameEffect,
+    displayNameColor,
+    displayNameGradientStart,
+    displayNameGradientEnd
+  ]);
 
   return (
     <>

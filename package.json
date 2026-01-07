@@ -10,7 +10,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "worker": "node worker/lanyard-redis-sync.js"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

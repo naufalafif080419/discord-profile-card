@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from 'redis';
+import type { createClient } from 'redis';
 import type { LanyardActivity, LanyardSpotify } from '@/lib/types/lanyard';
 import { isValidDiscordId } from '@/lib/utils/validation';
 import { fetchLanyardData } from '@/lib/api/lanyard';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { getRedisClient } from '@/lib/redis';
 
 // Activity data structure stored in Redis
 interface ActivityData {
@@ -50,45 +51,6 @@ async function trackUser(userId: string, client: ReturnType<typeof createClient>
   }
 }
 
-// Initialize Redis client
-let redis: ReturnType<typeof createClient> | null = null;
-
-async function getRedisClient() {
-  if (redis && redis.isOpen) return redis;
-
-  try {
-    const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
-    if (!redisUrl) throw new Error('Redis URL not configured');
-
-    const needsTls = redisUrl.startsWith('rediss://') || redisUrl.includes(':6380');
-    const reconnectStrategy = (retries: number) => Math.min(retries * 100, 3000);
-
-    if (needsTls) {
-      redis = createClient({
-        url: redisUrl,
-        socket: {
-          tls: true,
-          reconnectStrategy,
-        },
-      });
-    } else {
-      redis = createClient({
-        url: redisUrl,
-        socket: {
-          reconnectStrategy,
-        },
-      });
-    }
-
-    redis.on('error', (err) => console.error('Redis Client Error:', err));
-    await redis.connect();
-    return redis;
-  } catch (error) {
-    console.error('Failed to connect to Redis:', error);
-    throw error;
-  }
-}
-
 // GET: Retrieve stored activities for a user
 export async function GET(request: NextRequest) {
   try {
@@ -104,27 +66,15 @@ export async function GET(request: NextRequest) {
     // @ts-ignore - session.user.id is added in authOptions
     const isOwner = session?.user?.id === userId;
 
-    // IF NOT OWNER: Do not record anything, do not fetch lanyard server-side
-    if (!isOwner) {
-      return NextResponse.json({
-        activities: [],
-        spotify: null,
-        history: [],
-        isVerified: false,
-        updatedAt: Date.now()
-      });
-    }
-
-    // IF OWNER: Proceed with recording and full feature set
+    // Proceed with Redis connection for everyone (Read-only for public, Write for owner)
     const now = Date.now();
     try {
       const client = await getRedisClient();
       
-      // Rate Limit removed
-      
       const key = getKey(userId);
       const storedJson = await client.get(key);
       const historyKey = getHistoryKey(userId);
+      // Public users can see history too
       const historyJsonList = await client.lRange(historyKey, 0, 19);
       const history = historyJsonList.map(item => JSON.parse(item));
 
@@ -136,7 +86,27 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Fetch fresh data for owner
+      // IF NOT OWNER: Return cached data only
+      if (!isOwner) {
+        if (cachedData) {
+          return NextResponse.json({ 
+            activities: cachedData.activities, 
+            spotify: cachedData.spotify, 
+            history, 
+            isVerified: false, 
+            updatedAt: cachedData.updatedAt 
+          });
+        }
+        return NextResponse.json({
+          activities: [],
+          spotify: null,
+          history, // Return history even if current activity is empty
+          isVerified: false,
+          updatedAt: now
+        });
+      }
+
+      // IF OWNER: Fetch fresh data and update cache
       try {
         const lanyardData = await fetchLanyardData(userId, true);
         if (lanyardData) {
