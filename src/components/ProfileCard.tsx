@@ -917,7 +917,7 @@ export function ProfileCard({ lanyard, dstn, lantern, history, params, isVerifie
         '--profile-gradient-button-color': getThemeColors.buttonColor,
         '--profile-gradient-modal-background-color': getThemeColors.modalBgColor,
         ...outerContainerStyle
-      } as React.CSSProperties}
+      } as unknown as React.CSSProperties}
     >
       <div className="inner_c0bea0">
         <div className="discord-profile-card" style={{ margin: '0 auto', ...cardBackgroundStyle }}>
