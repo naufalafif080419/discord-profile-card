@@ -89,21 +89,6 @@ async function getRedisClient() {
   }
 }
 
-// Rate limit configuration
-const RATE_LIMIT_WINDOW = 60;
-const RATE_LIMIT_MAX = 60;
-
-async function checkRateLimit(ip: string, client: any): Promise<boolean> {
-  try {
-    const key = `rate-limit:${ip}`;
-    const current = await client.incr(key);
-    if (current === 1) await client.expire(key, RATE_LIMIT_WINDOW);
-    return current > RATE_LIMIT_MAX;
-  } catch (error) {
-    return false;
-  }
-}
-
 // GET: Retrieve stored activities for a user
 export async function GET(request: NextRequest) {
   try {
@@ -135,12 +120,8 @@ export async function GET(request: NextRequest) {
     try {
       const client = await getRedisClient();
       
-      // Rate Limit
-      const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
-      if (ip !== 'unknown' && await checkRateLimit(ip, client)) {
-        return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-      }
-
+      // Rate Limit removed
+      
       const key = getKey(userId);
       const storedJson = await client.get(key);
       const historyKey = getHistoryKey(userId);
